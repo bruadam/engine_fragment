@@ -28416,6 +28416,9 @@ class VceCasterUtils {
     const aperture = input.aperture();
     const radius = input.radius();
     const rawResult = aperture * radius * factor;
+    if (!Number.isFinite(rawResult)) {
+      return min;
+    }
     const divisions = Math.round(rawResult);
     return Math.min(Math.max(divisions, min), max);
   }
@@ -78053,14 +78056,20 @@ class VirtualPropertiesController {
     return itemIds;
   }
   getLocalIdsFromItemIds(itemIds) {
+    const meshes = this._model.meshes();
+    const seen = /* @__PURE__ */ new Set();
     const result = [];
-    const entries = this._localIdsToGeometryIds.entries();
-    for (const [localId, geometryIds] of entries) {
-      for (const itemId of itemIds) {
-        if (!geometryIds.includes(itemId))
-          continue;
-        result.push(localId);
-      }
+    for (const itemId of itemIds) {
+      const localIdIndex = meshes.meshesItems(itemId);
+      if (localIdIndex === null)
+        continue;
+      const localId = this._model.localIds(localIdIndex);
+      if (localId === null)
+        continue;
+      if (seen.has(localId))
+        continue;
+      seen.add(localId);
+      result.push(localId);
     }
     return result;
   }
